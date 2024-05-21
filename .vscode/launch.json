@@ -1,0 +1,72 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch VirtualMachine (Windows)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/VirtualMachine.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CMake: build",
+            "miDebuggerPath": "C:/path/to/gdb.exe",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false
+            },
+            "pipeTransport": {
+                "pipeProgram": "cmd.exe",
+                "pipeArgs": ["/C"],
+                "debuggerPath": "gdb"
+            },
+            "windows": {
+                "miDebuggerPath": "C:/path/to/gdb.exe",
+                "program": "${workspaceFolder}/build/Debug/VirtualMachine.exe"
+            },
+            "linux": {
+                "miDebuggerPath": "/usr/bin/gdb",
+                "program": "${workspaceFolder}/build/VirtualMachine"
+            },
+            "osx": {
+                "miDebuggerPath": "/usr/bin/lldb",
+                "program": "${workspaceFolder}/build/VirtualMachine"
+            }
+        },
+        {
+            "name": "Launch VirtualMachine (Linux)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/VirtualMachine",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "CMake: build",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false
+            }
+        }
+    ]
+}
