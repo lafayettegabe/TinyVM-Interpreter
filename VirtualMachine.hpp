@@ -7,25 +7,19 @@
 #include <random>
 #include <fstream>
 
-typedef struct memory_t {
-    int opcode;
-    int operand;
-} memory_t;
-
 class VirtualMachine {
 private:
-    std::vector<memory_t> memory;
-    std::vector<int> registers;
+    std::vector<int> memory, registers;
     int programCounter, accumulator;
 
 public:
     VirtualMachine() : 
-        memory(128, {0, 0}),
+        memory(128, 0),
         registers(2, 0), 
         programCounter(0), 
         accumulator(0) 
     {
-        std::cout << "VirtualMachine constructor called" << std::endl;
+        std::cout << "VirtualMachine initialized" << std::endl;
     }
 
     void loadProgram(VirtualMachine &vm) {
@@ -35,10 +29,9 @@ public:
             while (!file.eof()) {
                 int opcode, operand;
                 file >> opcode >> operand;
-                vm.memory[address].opcode = opcode;
-                vm.memory[address].operand = operand;
-                vm.programCounter++;
-                address++;
+                vm.memory[address++]= opcode;
+                vm.memory[address++]= operand;
+                vm.programCounter += 2;
                 if (address >= vm.memory.size()) {
                     break; // Stop reading if memory is full
                 }
@@ -53,52 +46,41 @@ public:
     void runProgram(VirtualMachine &vm) {
         const int MemoryStart = vm.programCounter;
 
-        // just log the memory start
         std::cout << "Memory Start: " << MemoryStart << std::endl;
     }
 
     class Debugger {
+    private:
+        VirtualMachine &vm;
+        const std::string BLUE = "\033[34m";
+        const std::string RED = "\033[31m";
+        const std::string RESET = "\033[0m";
+        
     public:
-        Debugger() {
+        Debugger(VirtualMachine &vm) : vm(vm) {
             std::cout << std::endl;
-            std::cout << "Debugger constructor called" << std::endl;
+            std::cout << "Debugger initialized" << std::endl;
             std::cout << std::endl;
-            dash_separator();
         }
 
-        void run(VirtualMachine &vm) {
-
-            // just to test the debugger
-            // fillMemoryRandom(vm);
-            
-            displayRegisters(vm);
-            displayProgramCounter(vm);
-            displayAccumulator(vm);
-            displayMemory(vm);
+        void log() {
+            std::cout << std::endl;
+            displayRegisters();
+            displayProgramCounter();
+            displayAccumulator();
+            displayMemory();
+            std::cout << std::endl;
         }
 
         void dash_separator() {
-            std::cout << "|" << std::setw(86) << std::setfill('-') << "|" << std::endl;
+            std::cout << "+" << std::setw(86) << std::setfill('-') << "+" << std::endl;
         }
 
         void empty_line() {
             std::cout << "|" << std::setw(86) << std::setfill(' ') << "|" << std::endl;
         }
 
-        void fillMemoryRandom(VirtualMachine &vm) {
-            // Use a random device to seed the random number generator
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<int> dis(0, 255); // Generate random integers between 0 and 255
-
-            // Iterate over the memory vector and fill it with random values
-            for (int i = 0; i < vm.memory.size(); ++i) {
-                vm.memory[i].opcode = static_cast<uint8_t>(dis(gen));
-                vm.memory[i].operand = static_cast<uint8_t>(dis(gen));
-            }
-        }
-
-        void displayMemory(const VirtualMachine &vm) {
+        void displayMemory() {
             // Private functions ----------------------------------|
             auto title = [this]() {
                 std::cout << "|" << std::setw(35) << std::setfill(' ') << ' ' << "Memory Dump" << std::setw(39) << std::setfill(' ') << ' ' << "|" << std::endl;
@@ -122,13 +104,23 @@ public:
 
                 for (int j = start; j <= end; j++) {
                     if (!(j > vm.memory.size())) {
-                        std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(vm.memory[j].opcode);
-                        std::cout << std::setw(2) << std::setfill('0') << static_cast<int>(vm.memory[j].operand);
+                        if (j < vm.programCounter) {
+                            std::cout << RED;
+                        } else {
+                            std::cout << BLUE;
+                        }
+                        if(j % 2 == 0) {
+                            std::cout << std::setw(4) << std::setfill('0') << static_cast<int>(vm.memory[j]);
+                        } else {
+                            std::cout << std::setw(4) << std::setfill('0') << static_cast<int>(vm.memory[j]);
+                        }
+                        std::cout << RESET;
                         if (j < end) {
                             std::cout << std::setfill(' ') << ' ';
                         } else {
                             std::cout << std::setw(13) << std::setfill (' ') << " |";
                         }
+
                     } else {
                         std::cout << std::setw(17) << std::setfill (' ') << " |";
                         break;
@@ -156,7 +148,7 @@ public:
             // -----------------------------------------------------|
         }
 
-        void displayRegisters(const VirtualMachine &vm) {
+        void displayRegisters() {
             // Private functions ----------------------------------|
             auto title = [this]() {
                 std::cout << "|" << std::setw(35) << std::setfill(' ') << ' ' << "Registers" << std::setw(41) << std::setfill(' ') << ' ' << "|" << std::endl;
@@ -179,7 +171,7 @@ public:
             // -----------------------------------------------------|
         }
 
-        void displayProgramCounter(const VirtualMachine &vm) {
+        void displayProgramCounter() {
             auto title = [this]() {
                 std::cout << "|" << std::setw(35) << std::setfill(' ') << ' ' << "Program Counter" << std::setw(35) << std::setfill(' ') << ' ' << "|" << std::endl;
             };
@@ -199,7 +191,7 @@ public:
             // -----------------------------------------------------|
         }
 
-        void displayAccumulator(const VirtualMachine &vm) {
+        void displayAccumulator() {
             auto title = [this]() {
                 std::cout << "|" << std::setw(35) << std::setfill(' ') << ' ' << "Accumulator" << std::setw(39) << std::setfill(' ') << ' ' << "|" << std::endl;
             };
@@ -220,8 +212,6 @@ public:
         }
 
         ~Debugger() {
-            dash_separator();
-            std::cout << std::endl;
             std::cout << "Debugger destructor called" << std::endl;
         }
     };

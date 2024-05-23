@@ -2,16 +2,13 @@
 #include "VirtualMachine.hpp"
 
 int main() {
-    // Run the program
     VirtualMachine vm;
+    VirtualMachine::Debugger debugger(vm);
     
     vm.loadProgram(vm);
     vm.runProgram(vm);
-    // ------------------------------------------------
-    // Debug the results
-    VirtualMachine::Debugger debugger;
     
-    debugger.run(vm);
-    // ------------------------------------------------   
+    debugger.log();
+
     return 0;
 }
