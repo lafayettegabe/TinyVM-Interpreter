@@ -10,12 +10,29 @@
 class VirtualMachine {
 private:
     std::vector<int> memory, registers;
-    int programCounter, accumulator;
+    int programSize, programCounter, accumulator;
+
+    enum Instructions {
+        LA   = 0,         // Load accumulator
+        SA   = 1,         // Store accumulator
+        AA   = 2,         // Add accumulator
+        MUL  = 3,         // Multiply accumulator
+        DIV  = 4,         // Divide accumulator
+        SUB  = 5,         // Subtract accumulator
+        JMP  = 6,         // Jump
+        JEQ  = 7,         // Jump if equal
+        JGT  = 8,         // Jump if greater
+        JLT  = 9,         // Jump if less
+        PW   = 10,        // Print word
+        RW   = 11,        // Read word
+        STOP = 12         // Stop machine
+    };
 
 public:
     VirtualMachine() : 
         memory(128, 0),
         registers(2, 0), 
+        programSize(0),
         programCounter(0), 
         accumulator(0) 
     {
@@ -31,22 +48,98 @@ public:
                 file >> opcode >> operand;
                 vm.memory[address++]= opcode;
                 vm.memory[address++]= operand;
-                vm.programCounter += 2;
+                vm.programSize += 2;
                 if (address >= vm.memory.size()) {
                     break; // Stop reading if memory is full
                 }
             }
             file.close();
-            std::cout << "Program loaded successfully with " << vm.programCounter << " instructions" << std::endl;
+            std::cout << "Program loaded successfully with " << vm.programSize << " instructions" << std::endl;
         } else {
             std::cerr << "Unable to open file prog.txt" << std::endl;
         }
     }
 
     void runProgram(VirtualMachine &vm) {
-        const int MemoryStart = vm.programCounter;
+        const int MemoryStart = vm.programSize;
+        const int MemoryEnd = vm.memory.size();
 
         std::cout << "Memory Start: " << MemoryStart << std::endl;
+
+        int opcode, operand;
+        while (opcode != STOP) {
+            opcode = vm.memory[vm.programCounter];
+            operand = vm.memory[vm.programCounter + 1];
+            switch (opcode) {
+                case LA:
+                    std::cout << "Load accumulator with memory[" << operand << "]" << std::endl;
+                    vm.accumulator = vm.memory[MemoryStart + operand];
+                    break;
+                case SA:
+                    std::cout << "Store accumulator in memory[" << operand << "]" << std::endl;
+                    vm.memory[MemoryStart + operand] = vm.accumulator;
+                    break;
+                case AA:
+                    std::cout << "Add memory[" << operand << "] to accumulator" << std::endl;
+                    vm.accumulator += vm.memory[MemoryStart + operand];
+                    break;
+                case MUL:
+                    std::cout << "Multiply accumulator by memory[" << operand << "]" << std::endl;
+                    vm.accumulator *= vm.memory[MemoryStart + operand];
+                    break;
+                case DIV:
+                    std::cout << "Divide accumulator by memory[" << operand << "]" << std::endl;
+                    vm.accumulator /= vm.memory[MemoryStart + operand];
+                    break;
+                case SUB:
+                    std::cout << "Subtract memory[" << operand << "] from accumulator" << std::endl;
+                    vm.accumulator -= vm.memory[MemoryStart + operand];
+                    break;
+                case JMP:
+                    std::cout << "Jump to memory[" << operand << "]" << std::endl;
+                    vm.programCounter = operand;
+                    break;
+                case JEQ:
+                    std::cout << "Jump to memory[" << operand << "] if accumulator is zero" << std::endl;
+                    if (vm.accumulator == 0) {
+                        std::cout << "Accumulator is zero" << std::endl;
+                        vm.programCounter = operand;
+                    }
+                    break;
+                case JGT:
+                    std::cout << "Jump to memory[" << operand << "] if accumulator is greater than zero" << std::endl;
+                    if (vm.accumulator > 0) {
+                        std::cout << "Accumulator is greater than zero" << std::endl;
+                        vm.programCounter = operand;
+                    }
+                    break;
+                case JLT:
+                    std::cout << "Jump to memory[" << operand << "] if accumulator is less than zero" << std::endl;
+                    if (vm.accumulator < 0) {
+                        std::cout << "Accumulator is less than zero" << std::endl;
+                        vm.programCounter = operand;
+                    }
+                    break;
+                case PW:
+                    std::cout << "Print word: " << vm.memory[MemoryStart + operand] << std::endl;
+                    break;
+                case RW:
+                    std::cout << "Read word: ";
+                    std::cin >> vm.memory[MemoryStart + operand];
+                    break;
+                case STOP:
+                    std::cout << "Machine stopped" << std::endl;
+                    break;
+                default:
+                    std::cerr << "Invalid opcode: " << opcode << std::endl;
+                    break;
+            }
+            vm.programCounter += 2;
+            if (vm.programCounter >= MemoryEnd) {
+                std::cerr << "Program counter out of bounds" << std::endl;
+                break;
+            }
+        }
     }
 
     class Debugger {
@@ -104,7 +197,7 @@ public:
 
                 for (int j = start; j <= end; j++) {
                     if (!(j > vm.memory.size())) {
-                        if (j < vm.programCounter) {
+                        if (j < vm.programSize) {
                             std::cout << RED;
                         } else {
                             std::cout << BLUE;
