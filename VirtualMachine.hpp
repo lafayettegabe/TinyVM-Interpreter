@@ -57,7 +57,7 @@ public:
                 ss >> opcode >> operand;
                 vm.memory[address++] = opcode * 100 + operand; // Ex: 03 99 -> 399
                 // Increase program size
-                vm.programSize += 2;
+                vm.programSize++;
                 // Break if address is out of bounds (128)
                 if (address >= vm.memory.size()) {
                     break;
