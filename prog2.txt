@@ -1,0 +1,7 @@
+11 20   // Read word into memory[20] (to input 10)
+11 21   // Read word into memory[21] (to input 20)
+00 20   // Load accumulator with memory[20]
+02 21   // Add memory[21] to accumulator
+01 22   // Store accumulator in memory[22]
+10 22   // Write word from memory[22]
+12 00   // Stop machine

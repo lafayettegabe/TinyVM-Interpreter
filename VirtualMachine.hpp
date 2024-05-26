@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <random>
 #include <fstream>
+#include <sstream>
 
 class VirtualMachine {
 private:
@@ -40,17 +41,26 @@ public:
     }
 
     void loadProgram(VirtualMachine &vm) {
-        std::ifstream file("prog.txt");
+        std::ifstream file("prog2.txt");
         if (file.is_open()) {
             int address = 0;
-            while (!file.eof()) {
+            std::string line;
+
+            while (std::getline(file, line)) {
+                // Remove comments
+                if (line.find("//") != std::string::npos) {
+                    line = line.substr(0, line.find("//"));
+                }
+                // Read opcode and operand
                 int opcode, operand;
-                file >> opcode >> operand;
-                vm.memory[address++]= opcode;
-                vm.memory[address++]= operand;
+                std::stringstream ss(line);
+                ss >> opcode >> operand;
+                vm.memory[address++] = opcode * 100 + operand; // Ex: 03 99 -> 399
+                // Increase program size
                 vm.programSize += 2;
+                // Break if address is out of bounds (128)
                 if (address >= vm.memory.size()) {
-                    break; // Stop reading if memory is full
+                    break;
                 }
             }
             file.close();
@@ -60,40 +70,54 @@ public:
         }
     }
 
+    int getOpcode(int instruction) {
+        return instruction / 100;
+    }
+
+    int getOperand(int instruction) {
+        return instruction % 100;
+    }
+
     void runProgram(VirtualMachine &vm) {
         const int MemoryStart = vm.programSize;
         const int MemoryEnd = vm.memory.size();
 
         std::cout << "Memory Start: " << MemoryStart << std::endl;
 
-        int opcode, operand;
-        while (opcode != STOP) {
-            opcode = vm.memory[vm.programCounter];
-            operand = vm.memory[vm.programCounter + 1];
+        int opcode, operand, i = 0;
+        do {
+            int high_byte, _;
+            opcode  = getOpcode(vm.memory[vm.programCounter]);
+            operand = getOperand(vm.memory[vm.programCounter]);
+
+            std::cout << "+---------------------------------------------------------------+" << std::endl;
+            std::cout << i++ <<  " | Opcode: " << opcode << " | Operand: " << operand << " | PC: " << vm.programCounter << std::endl;
+            
             switch (opcode) {
                 case LA:
                     std::cout << "Load accumulator with memory[" << operand << "]" << std::endl;
-                    vm.accumulator = vm.memory[MemoryStart + operand];
+                    vm.accumulator = vm.memory[operand];
                     break;
                 case SA:
                     std::cout << "Store accumulator in memory[" << operand << "]" << std::endl;
-                    vm.memory[MemoryStart + operand] = vm.accumulator;
+                    high_byte = vm.memory[operand] / 100;
+                    vm.memory[operand] = vm.accumulator + high_byte * 100;
                     break;
                 case AA:
                     std::cout << "Add memory[" << operand << "] to accumulator" << std::endl;
-                    vm.accumulator += vm.memory[MemoryStart + operand];
+                    vm.accumulator += vm.memory[operand];
                     break;
                 case MUL:
                     std::cout << "Multiply accumulator by memory[" << operand << "]" << std::endl;
-                    vm.accumulator *= vm.memory[MemoryStart + operand];
+                    vm.accumulator *= vm.memory[operand];
                     break;
                 case DIV:
                     std::cout << "Divide accumulator by memory[" << operand << "]" << std::endl;
-                    vm.accumulator /= vm.memory[MemoryStart + operand];
+                    vm.accumulator /= vm.memory[operand];
                     break;
                 case SUB:
                     std::cout << "Subtract memory[" << operand << "] from accumulator" << std::endl;
-                    vm.accumulator -= vm.memory[MemoryStart + operand];
+                    vm.accumulator -= vm.memory[operand];
                     break;
                 case JMP:
                     std::cout << "Jump to memory[" << operand << "]" << std::endl;
@@ -121,11 +145,13 @@ public:
                     }
                     break;
                 case PW:
-                    std::cout << "Print word: " << vm.memory[MemoryStart + operand] << std::endl;
+                    std::cout << "Print word: " << vm.memory[operand] << std::endl;
                     break;
                 case RW:
                     std::cout << "Read word: ";
-                    std::cin >> vm.memory[MemoryStart + operand];
+                    high_byte = vm.memory[operand] / 100;
+                    std::cin >> _;
+                    vm.memory[operand] = _ + high_byte * 100;
                     break;
                 case STOP:
                     std::cout << "Machine stopped" << std::endl;
@@ -134,12 +160,11 @@ public:
                     std::cerr << "Invalid opcode: " << opcode << std::endl;
                     break;
             }
-            vm.programCounter += 2;
-            if (vm.programCounter >= MemoryEnd) {
+            if (++vm.programCounter >= MemoryEnd) {
                 std::cerr << "Program counter out of bounds" << std::endl;
                 break;
             }
-        }
+        } while (opcode != STOP);
     }
 
     class Debugger {
@@ -151,9 +176,7 @@ public:
         
     public:
         Debugger(VirtualMachine &vm) : vm(vm) {
-            std::cout << std::endl;
             std::cout << "Debugger initialized" << std::endl;
-            std::cout << std::endl;
         }
 
         void log() {
